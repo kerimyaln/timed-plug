@@ -1,0 +1,199 @@
+
+/* ardunio */
+
+#include <Servo.h>
+#include <LiquidCrystal.h>
+
+
+Servo myservomotor;
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+const int buttonMod = 7;
+const int buttonAzaltma = 8;
+const int buttonArttirma = 9;
+const int buttonOnOff = 10; 
+const int isiSensor=A0;
+int mod=0; 
+int dk=0,isi=25,simdikiisi=0;  
+bool isiKontrol=false,servodrm=false;
+
+void setup(){
+  myservomotor.attach(6);  
+  pinMode(buttonMod,INPUT);
+  pinMode(buttonAzaltma,INPUT);
+  pinMode(buttonArttirma,INPUT);
+  pinMode(buttonOnOff,INPUT);
+  lcd.begin(16, 2);
+  pinMode(13,OUTPUT);
+  digitalWrite(13,HIGH);
+  myservomotor.write(0);
+  digitalWrite(13,LOW);
+ 
+}
+
+void loop(){
+  mod=modKontrol(mod);
+
+  if(mod==0){
+ lcd.clear();
+   lcd.print("Acilma: "+String(dk)+" dk");
+   lcd. setCursor(0,1);
+ 
+   if(HIGH==digitalRead(buttonArttirma)){
+      dk++;
+      delay(2);
+      }
+    else if(HIGH==digitalRead(buttonAzaltma)&&dk>1){
+    dk--;
+    delay(2);
+    }
+    if(HIGH==digitalRead(buttonOnOff)){
+     lcd.print("sonra acilacak.");
+    bekle(dk);
+    servoAc(); }
+    
+    mod=modKontrol(mod); }
+    
+  else if(mod==1){
+      lcd.clear();
+   lcd.print("Kapanma: "+String(dk)+" dk");
+   lcd. setCursor(0,1);
+   lcd.print("sonra kapanacak.");
+   if(HIGH==digitalRead(buttonArttirma)){
+      dk++;
+      delay(2);
+      }
+    else if(HIGH==digitalRead(buttonAzaltma)&&dk>1){
+    dk--;
+    delay(2);
+    }
+    if(HIGH==digitalRead(buttonOnOff)){
+    servoAc();
+    bekle(dk);
+    servoKapat();
+    }
+    mod=modKontrol(mod);
+      }
+  else if(mod==2){   
+lcd.clear();
+lcd.print(String(isi)+" C Acilma");
+lcd.setCursor(0,1);
+
+simdikiisi=(int)(0.488281*analogRead(isiSensor));
+lcd.print("Sicaklik: "+String(simdikiisi)+" C");
+if(HIGH==digitalRead(buttonArttirma)){
+isi++;
+delay(2);
+}
+else if(HIGH==digitalRead(buttonAzaltma)){
+isi--;
+delay(2);
+}
+if(HIGH==digitalRead(buttonOnOff))
+  isiKontrol=true;
+  
+    while(isiKontrol){
+    if((simdikiisi-2)>isi){
+    servoAc();
+servodrm=true;
+    }
+    else if(servodrm){
+    servoKapat();
+    servodrm=false;
+    }
+    simdikiisi=(int)(0.488281*analogRead(isiSensor));
+    lcd.clear();
+lcd.print(String(isi)+" C Acilma");
+lcd.setCursor(0,1);
+lcd.print("Sicaklik: "+String(simdikiisi)+" C");
+if(HIGH==digitalRead(buttonOnOff))
+isiKontrol=false;
+
+    delay(2000);  }
+    
+    mod=modKontrol(mod); }
+    
+ else{
+lcd.clear();
+lcd.print(String(isi)+" C Kapanma");
+lcd.setCursor(0,1);
+
+simdikiisi=(int)(0.488281*analogRead(isiSensor));
+lcd.print("Sicaklik: "+String(simdikiisi)+" C");
+if(HIGH==digitalRead(buttonArttirma)){
+isi++;
+delay(2);
+}
+else if(HIGH==digitalRead(buttonAzaltma)){
+isi--;
+delay(2);
+}
+if(HIGH==digitalRead(buttonOnOff))
+  isiKontrol=true;
+  
+    while(isiKontrol){
+    if((simdikiisi-2)>=isi){
+      if(servodrm)
+    servoKapat();
+servodrm=false;
+    }
+    else if((simdikiisi+2)<=isi&&!servodrm) {
+    
+    servoAc(); 
+    servodrm=true;//servo akım taşır
+    }
+    simdikiisi=(int)(0.488281*analogRead(isiSensor));
+    lcd.clear();
+lcd.print(String(isi)+" C Kapanma");
+lcd.setCursor(0,1);
+lcd.print("Sicaklik: "+String(simdikiisi)+" C");
+if(HIGH==digitalRead(buttonOnOff))
+isiKontrol=false;
+
+    
+    delay(2000);
+    
+  
+    
+    }
+
+mod=modKontrol(mod);
+  
+  }
+
+mod=modKontrol(mod);
+ delay(2);
+}
+
+int modKontrol(int m){
+  if(HIGH==digitalRead(buttonMod)){
+    m++;
+    if(m==4)
+    m=0;
+    delay(4);
+    }
+  return m;
+  }
+ void servoAc(){
+  digitalWrite(13,HIGH);
+  for(int i=0;i<150;i++){
+    myservomotor.write(i);
+    delay(10);
+    }
+    digitalWrite(13,LOW);
+  }
+  void servoKapat(){
+    digitalWrite(13,HIGH);
+    for(int c=150;c>0;c--){
+      myservomotor.write(c);
+    delay(10);
+    }
+    digitalWrite(13,LOW);
+    }
+void bekle(int t){
+  t=t*30; 
+  for(int h=0;h<t;h++){
+  delay(2000);
+  if(HIGH==digitalRead(buttonOnOff))
+  break;
+  }
+  }
